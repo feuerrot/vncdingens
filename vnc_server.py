@@ -126,11 +126,12 @@ while True:
 			if fbupdate:
 				send_fbupdate(conn)
 
-
+	except ConnectionResetError:
+		conn.close()
+		pass
 
 	except Exception as e:
 		print(e.__doc__)
-		print(e.message)
 		conn.close()
 		pass
 	conn.close()
