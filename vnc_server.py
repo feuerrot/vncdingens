@@ -32,44 +32,44 @@ s.bind((host, port))
 s.listen(1)
 
 def read_spf(s):
-	print("read_sfp")
+	#print("read_sfp")
 	s.recv(3) # Padding
 	PIXFMT = s.recv(16)
-	print(PIXFMT)
+	#print(PIXFMT)
 
 def read_enc(s):
-	print("read_enc")
+	#print("read_enc")
 	s.recv(1) # Padding
 	n = s.recv(2)
 	(n,) = struct.unpack(">H", n)
-	print("Anzahl Encodings: {}".format(n))
+	#print("Anzahl Encodings: {}".format(n))
 	for i in range(n):
 		s.recv(4)
 
 def read_fbur(s):
-	print("read_fbur")
+	#print("read_fbur")
 	inc = s.recv(1)
 	xpos = s.recv(2)
 	ypos = s.recv(2)
 	xsize = s.recv(2)
 	ysize = s.recv(2)
-	print("inc: {} xpos: {} ypos: {} xsize: {} ysize: {}".format(inc, xpos, ypos, xsize, ysize))
+	#print("inc: {} xpos: {} ypos: {} xsize: {} ysize: {}".format(inc, xpos, ypos, xsize, ysize))
 	fbupdate = True
 
 def read_key(s):
-	print("read_key")
+	#print("read_key")
 	down = s.recv(1)
 	s.recv(2) # Padding
 	key = s.recv(4)
 
 def read_pointer(s):
-	print("read_pointer")
+	#print("read_pointer")
 	button = s.recv(1)
 	xpos = s.recv(2)
 	ypos = s.recv(2)
 
 def read_cct(s):
-	print("read_cct")
+	#print("read_cct")
 	s.recv(3) # Padding
 	n = s.recv(4)
 	(n,) = struct.unpack(">I", n)
