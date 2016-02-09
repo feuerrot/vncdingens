@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import struct
 import socket
+import os
 
 logf = 'logfile'
 host = ''
@@ -8,7 +9,7 @@ port = 5900
 
 log = open('logfile', 'a')
 
-PIXFMT = None
+fbupdate = True
 
 SetPixelFormat = b'\x00'
 SetEncoding = b'\x02'
@@ -19,7 +20,9 @@ ClientCutText = b'\x06'
 
 p_protoversion = b'RFB 003.003\n'
 p_securityhandshake = b'\x00\x00\x00\x01'
-p_serverinit = b'\x00\xFF\x00\xFF\x20\x20\x01\x01\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08feuerrot'
+p_serverinit = b'\x00\xFF\x00\xFF'
+PIXFMT = b'\x20\x20\x01\x01\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\x00\x00\x00'
+p_servername = b'\x00\x00\x00\x08feuerrot'
 p_bell = b'\x02'
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -50,6 +53,8 @@ def read_fbur(s):
 	ypos = s.recv(2)
 	xsize = s.recv(2)
 	ysize = s.recv(2)
+	print("inc: {} xpos: {} ypos: {} xsize: {} ysize: {}".format(inc, xpos, ypos, xsize, ysize))
+	fbupdate = True
 
 def read_key(s):
 	print("read_key")
@@ -85,7 +90,19 @@ def readpacket(s):
 	elif data == ClientCutText:
 		read_cct(s)
 	
-	
+def send_fbupdate(s):
+	fbupdate = False
+	data = bytearray()
+	data += b'\x00'
+	data += b'\x00' # Padding
+	data += b'\x00\x01'
+
+	data += b'\x00\x00\x00\x00' # Start: x=0 y=0
+	data += b'\x00\xFF\x00\xFF' # Size: x=255 y=255
+	data += b'\x00\x00\x00\x00' # Raw encoding
+
+	data += os.urandom(255**2)
+	s.send(data)
 
 while True:
 	conn, addr = s.accept()
@@ -102,10 +119,15 @@ while True:
 		data = conn.recv(1)
 		print(data)
 
-		conn.send(p_serverinit)
+		conn.send(p_serverinit + PIXFMT + p_servername)
 
 		while True:
 			readpacket(conn)
+			if fbupdate:
+				send_fbupdate(conn)
+
+
+
 	except Exception as e:
 		print(e.__doc__)
 		print(e.message)
