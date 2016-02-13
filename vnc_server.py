@@ -9,6 +9,7 @@ port = 5900
 
 log = open('logfile', 'a')
 
+pixfmtinit = False
 fbupdate = True
 
 SetPixelFormat = b'\x00'
@@ -20,7 +21,7 @@ ClientCutText = b'\x06'
 
 p_protoversion = b'RFB 003.003\n'
 p_securityhandshake = b'\x00\x00\x00\x01'
-p_serverinit = b'\x00\xFF\x00\xFF'
+p_serverinit = b'\x02\x00\x02\x00'
 PIXFMT = b'\x20\x20\x01\x01\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\x00\x00\x00'
 p_servername = b'\x00\x00\x00\x08feuerrot'
 p_bell = b'\x02'
@@ -32,10 +33,13 @@ s.bind((host, port))
 s.listen(1)
 
 def read_spf(s):
+	global PIXFMT
+	global pixfmtinit
 	#print("read_sfp")
 	s.recv(3) # Padding
 	PIXFMT = s.recv(16)
-	#print(PIXFMT)
+	print(PIXFMT)
+	pixfmtinit = True
 
 def read_enc(s):
 	#print("read_enc")
@@ -47,13 +51,13 @@ def read_enc(s):
 		s.recv(4)
 
 def read_fbur(s):
-	#print("read_fbur")
+	print("read_fbur")
 	inc = s.recv(1)
 	xpos = s.recv(2)
 	ypos = s.recv(2)
 	xsize = s.recv(2)
 	ysize = s.recv(2)
-	#print("inc: {} xpos: {} ypos: {} xsize: {} ysize: {}".format(inc, xpos, ypos, xsize, ysize))
+	print("inc: {} xpos: {} ypos: {} xsize: {} ysize: {}".format(inc, xpos, ypos, xsize, ysize))
 	fbupdate = True
 
 def read_key(s):
@@ -98,10 +102,10 @@ def send_fbupdate(s):
 	data += b'\x00\x01'
 
 	data += b'\x00\x00\x00\x00' # Start: x=0 y=0
-	data += b'\x00\xFF\x00\xFF' # Size: x=255 y=255
+	data += b'\x02\x00\x02\x00' # Size: x=255 y=255
 	data += b'\x00\x00\x00\x00' # Raw encoding
 
-	data += os.urandom(255**2)
+	data += os.urandom(int(PIXFMT[0]/8)*0x200**2)
 	s.send(data)
 
 while True:
@@ -123,7 +127,7 @@ while True:
 
 		while True:
 			readpacket(conn)
-			if fbupdate:
+			if fbupdate and pixfmtinit:
 				send_fbupdate(conn)
 
 	except ConnectionResetError:
